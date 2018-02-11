@@ -1,0 +1,5 @@
+#define WIFI_SSID "myssid"
+#define WIFI_PASSWORD "mypass"
+#define BLYNK_TOKEN_INDOOR "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+#define BLYNK_TOKEN_OUTDOOR "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+#define BLYNK_TOKEN_LIGHT "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
