@@ -1,6 +1,6 @@
 {
     "terminal.integrated.env.linux": {
-        "PATH": "/home/user/.platformio/penv/bin:/home/user/.platformio/penv:/usr/local/sbin:/usr/local/bin:/usr/bin:/usr/lib/jvm/default/bin:/usr/bin/site_perl:/usr/bin/vendor_perl:/usr/bin/core_perl",
+        "PATH": "/home/user/.platformio/penv/bin:/home/user/.platformio/penv:/usr/local/tools/jdk8/bin:/usr/local/tools/maven/bin:/usr/local/tools/hadoop/bin/:/usr/local/sbin:/usr/local/bin:/usr/bin:/opt/cuda/bin:/usr/lib/jvm/default/bin:/usr/bin/site_perl:/usr/bin/vendor_perl:/usr/bin/core_perl",
         "PLATFORMIO_CALLER": "vscode"
     }
 }

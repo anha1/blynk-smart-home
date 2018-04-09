@@ -9,10 +9,6 @@
 
 #define NUMPIXELS 138
 #define PIN_NEOPIXEL 9
-#define PIN_IN_MOVEMENT 7
-
-#define MOVEMENT_WAIT_MS 90000
-#define MOVEMENT_FILTER_MS 15000
 
 #define SWITCH_OFF 1
 #define SWITCH_ON 2
@@ -25,7 +21,7 @@
 #define MODE_WARM_WHITE 5
 #define MODE_STRIPES 6
 
-#define MOTION_OUT_VPIN 21
+#define V_IN_BRIDGE_MOVE 30
 
 uint32_t black;
 uint32_t white;
@@ -52,24 +48,11 @@ float speed = 100;
 int strobeMicros = 1; // strobe duration
 int numRunners = 7;
 
-unsigned volatile long lastMove = 0;
 boolean isMove = false;
 
-void logMove() { Blynk.virtualWrite(MOTION_OUT_VPIN, isMove ? 1024 : 0); }
 
-void onMove() {
-  unsigned long now = millis();
-  if (abs(now - (lastMove + MOVEMENT_WAIT_MS)) > MOVEMENT_FILTER_MS) {
-    lastMove = now;
-  }
-}
 
 boolean calcIsLight() {
-  if (digitalRead(PIN_IN_MOVEMENT) == HIGH) {
-    onMove();
-  }
-  long diff = (millis() - lastMove);
-  isMove = lastMove > 0 && diff < MOVEMENT_WAIT_MS;
   boolean isLight = Blynk.connected() &&
                     ((swit == SWITCH_ON) || ((swit == SWITCH_AUTO) && isMove));
   return isLight;
@@ -95,11 +78,12 @@ BLYNK_WRITE(V0) {
   b = param[2].asInt();
 }
 
-BLYNK_WRITE(V2) { br = param.asInt(); }
+BLYNK_WRITE(V2) { 
+  br = param.asInt(); 
+  }
 
 BLYNK_WRITE(V3) {
-  mod = param.asInt();
-  calcIsLight();
+  mod = param.asInt();  
 }
 
 BLYNK_WRITE(V4) { step = param.asInt(); }
@@ -112,7 +96,10 @@ BLYNK_WRITE(V7) { numRunners = param.asInt(); }
 
 BLYNK_WRITE(V8) {
   swit = param.asInt();
-  calcIsLight();
+}
+
+BLYNK_WRITE(V_IN_BRIDGE_MOVE) {
+    isMove = param.asInt() > 512;
 }
 
 void draw() {
@@ -178,24 +165,18 @@ void draw() {
 }
 
 void setup() {
-
-  pinMode(PIN_IN_MOVEMENT, INPUT);
-
   Serial.begin(9600);
 
   calcIsLight();
 
   strip.begin();
   draw();
-  attachInterrupt(digitalPinToInterrupt(PIN_IN_MOVEMENT), onMove, RISING);
 
   black = strip.Color(0, 0, 0);
   white = strip.Color(255, 255, 255);
   warmWhite = strip.Color(255, 103, 23);
 
   timer.setInterval(16, draw); // 60fps
-
-  timer.setInterval(9000, logMove);
 
   delay(10);
 
