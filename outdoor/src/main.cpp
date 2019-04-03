@@ -63,9 +63,14 @@ void setup() {
   attachInterrupt(digitalPinToInterrupt(GEIGER_COUNTER_PIN), onPulse, RISING);
   previousMillis = millis();
   timer.setInterval(26183, doSubmitGeigerCounter);
+
+  ESP.wdtDisable();
 }
 
 void loop() {
   timer.run();
   Blynk.run();
+  if (Blynk.connected()) {
+    ESP.wdtFeed();
+  }
 }

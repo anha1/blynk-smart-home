@@ -127,9 +127,15 @@ void setup() {
 
   Blynk.begin(BLYNK_TOKEN_INDOOR, WIFI_SSID, WIFI_PASSWORD);
   timer.setInterval(5000, doSubmitSensorReadings);
+
+  ESP.wdtDisable();
 }
 
 void loop() {
   timer.run();
   Blynk.run();
+
+  if (Blynk.connected()) {
+    ESP.wdtFeed();
+  }
 }

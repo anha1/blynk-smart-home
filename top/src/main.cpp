@@ -131,9 +131,14 @@ void setup() {
   timer.setInterval(1000, doSubmitSensorReadings);
   timer.setInterval(10000, doCheckCcs811);
   timer.setInterval(50, tryLogMove);
+
+  ESP.wdtDisable();
 }
 
 void loop() {
   timer.run();
   Blynk.run();
+  if (Blynk.connected()) {
+    ESP.wdtFeed();
+  }
 }
