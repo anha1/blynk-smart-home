@@ -4,3 +4,4 @@
 #define BLYNK_TOKEN_OUTDOOR "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 #define BLYNK_TOKEN_LIGHT "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 #define BLYNK_TOKEN_TOP "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+#define BLYNK_TOKEN_WATERING "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
