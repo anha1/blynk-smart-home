@@ -8,7 +8,9 @@
 #define VPIN_LEVEL 10
 #define VPIN_WATERING 11
 #define VPIN_ERROR 12
-#define VPIN_SINGE_WATERING_MINUTERS 13
+#define VPIN_SINGE_WATERING_MINUTES 13
+#define VPIN_SINGE_WATERING_HOURS 14
+#define VPIN_SINGE_WATERING_HOURS_MINUTES 15
 
 #define PIN_SENSOR_POWER 32
 #define PIN_PUMP 33
@@ -93,7 +95,13 @@ void act() {
   unsigned long sinceLastWateringMinutes = (now - lastWatering) / 60000;
   Serial.print("sinceLastWateringMinutes: ");
   Serial.println(sinceLastWateringMinutes);
-  Blynk.virtualWrite(VPIN_SINGE_WATERING_MINUTERS, sinceLastWateringMinutes);
+  Blynk.virtualWrite(VPIN_SINGE_WATERING_MINUTES, sinceLastWateringMinutes);
+  //to display hh:mm
+  int h = sinceLastWateringMinutes / 60;
+  int m = sinceLastWateringMinutes - h * 60;
+  Blynk.virtualWrite(VPIN_SINGE_WATERING_HOURS, h);
+  Blynk.virtualWrite(VPIN_SINGE_WATERING_HOURS_MINUTES, m);
+  Blynk.virtualWrite(VPIN_WATERING, 0);
 
   if (sinceLastWateringMinutes < cooldownMinutes) {
     Serial.println("no action: cooldownMinutes");
@@ -138,7 +146,6 @@ void control () {
       Serial.println("WATERING END!");
       pump(false);      
       isWatering = false;
-      Blynk.virtualWrite(VPIN_WATERING, 0);
     }
 }
 

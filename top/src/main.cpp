@@ -7,6 +7,7 @@
 
 #define PIN_MOTION 12
 #define PIN_RESET_CCS811 0
+#define PIN_PM25 14
 
 #define V_OUT_TEMP 1
 #define V_OUT_CO2 2
@@ -17,10 +18,13 @@
 #define V_OUT_PRESSURE 7
 #define V_OUT_HUMIDITY 8
 #define V_OUT_GAS 9
+#define V_OUT_PM25 10
 
 #define V_BRIDGE_OUT_MOVE 30
 
 #define MOVEMENT_WAIT_MS 90000
+
+void ICACHE_RAM_ATTR onMove();
 
 Adafruit_CCS811 ccs;
 BlynkTimer timer;
@@ -117,8 +121,39 @@ void doCheckCcs811() {
   }
 }
 
+void doCheckPm25() {
+  //ZPH02 Particles Sensor, see https://www.tme.eu/Document/9eaeb32b1113eb7baf9f8b9e48e461ea/ZPH02.pdf
+  int samples = 16;
+  float sum = 0;
+  int illegalCount = 0;
+  for (int i=0; i< samples; i++) {
+    unsigned long highTime = pulseIn(PIN_PM25, HIGH); 
+    unsigned long lowTime = pulseIn(PIN_PM25, LOW);
+    if (isnan(highTime) || isnan(lowTime) || lowTime == 0 || highTime == 0) {
+      illegalCount ++;
+      if (illegalCount > 16 ) {
+        Serial.println("pm25: giving up");
+        return;
+      } else {
+        i--;
+        continue;
+      }
+    }
+    unsigned long cycleTime = highTime + lowTime;
+    float dutyCycle = (float) lowTime / float(cycleTime);
+    sum += dutyCycle;
+  }  
+  float pm25 = 1000.0 * sum / (float)samples;
+  Serial.print("pm25: ");
+  Serial.print(pm25);  
+  Serial.print(" illegal: ");
+  Serial.println(illegalCount);  
+  Blynk.virtualWrite(V_OUT_PM25, pm25);
+}
+
 void setup() {
   Serial.begin(9600);
+  pinMode(PIN_PM25, INPUT);
   pinMode(PIN_MOTION, INPUT);
   pinMode(0, OUTPUT);
   digitalWrite(0, HIGH);
@@ -128,11 +163,13 @@ void setup() {
   attachInterrupt(digitalPinToInterrupt(PIN_MOTION), onMove, RISING);
 
   Blynk.begin(BLYNK_TOKEN_TOP, WIFI_SSID, WIFI_PASSWORD);
-  timer.setInterval(1000, doSubmitSensorReadings);
-  timer.setInterval(10000, doCheckCcs811);
-  timer.setInterval(50, tryLogMove);
+  timer.setInterval(23899, doSubmitSensorReadings);
+  timer.setInterval(23279, doCheckPm25);
+  timer.setInterval(50111, doCheckCcs811);
+  timer.setInterval(43, tryLogMove);
 
   ESP.wdtDisable();
+  Serial.println("init complete");
 }
 
 void loop() {
