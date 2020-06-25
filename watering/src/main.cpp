@@ -25,7 +25,9 @@ boolean isInitialized = false;
 
 unsigned long lastWatering = 0;
 
-int level = 600;
+boolean isFirstReading = true;
+float level = 0;
+int smooth = 64;
 
 boolean isInvalidReading = false;
 int invalidReadingCount = 0;
@@ -36,7 +38,7 @@ hw_timer_t *watchdogTimer = NULL;
 BLYNK_CONNECTED() { Blynk.syncAll(); }
 
 void pump(boolean isEnable) {
-  digitalWrite(PIN_PUMP, isEnable ? LOW : HIGH); // need to be disabled if no relay input
+  digitalWrite(PIN_PUMP, isEnable ? HIGH : LOW); // need to be disabled if no relay input
 }
 
 void reboot() {
@@ -53,6 +55,7 @@ void report () {
   digitalWrite(PIN_SENSOR_POWER, HIGH);
   delay(300);  
   long readVal = analogRead(A0);
+
   digitalWrite(PIN_SENSOR_POWER, LOW);
   if (readVal == 0 || readVal == 4095) {
     pump(false);
@@ -77,11 +80,22 @@ void report () {
   
 
   Serial.println("report");
-  level = 1000.0*(4095.0 - (float) readVal)/4095.0;
+  float currentLevel = (exp( (4095.0 - (float) readVal)/ (410.0))) / 22.0;
+
+  if (isFirstReading) {
+    level = currentLevel;
+  } else {
+    level = ((smooth - 1) * level +  currentLevel) / smooth;
+  }
+
   
-  Serial.print("level: ");
+  Serial.print("readVal: ");
+  Serial.print(readVal);
+  Serial.print(" currentLevel: ");
+  Serial.print(currentLevel);
+  Serial.print(" level: ");
   Serial.println(level);
-  Blynk.virtualWrite(VPIN_LEVEL, level);
+  Blynk.virtualWrite(VPIN_LEVEL, (int) level);
 }
 
 void act() {
