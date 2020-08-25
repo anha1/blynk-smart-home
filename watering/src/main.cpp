@@ -3,6 +3,8 @@
 #include <WiFi.h>
 #include <WiFiClient.h>
 #include <BlynkSimpleEsp32.h>
+#include <esp_int_wdt.h>
+#include <esp_task_wdt.h>
 #define BLYNK_PRINT Serial
 
 #define VPIN_LEVEL 10
@@ -11,6 +13,7 @@
 #define VPIN_SINGE_WATERING_MINUTES 13
 #define VPIN_SINGE_WATERING_HOURS 14
 #define VPIN_SINGE_WATERING_HOURS_MINUTES 15
+#define VPIN_UPTIME 16
 
 #define PIN_SENSOR_POWER 32
 #define PIN_PUMP 33
@@ -33,17 +36,10 @@ boolean isInvalidReading = false;
 int invalidReadingCount = 0;
 boolean isWatering = false;
 
-hw_timer_t *watchdogTimer = NULL;
-
 BLYNK_CONNECTED() { Blynk.syncAll(); }
 
 void pump(boolean isEnable) {
   digitalWrite(PIN_PUMP, isEnable ? HIGH : LOW); // need to be disabled if no relay input
-}
-
-void reboot() {
-  Serial.print("Rebooting .. \n\n");
-  esp_restart();
 }
 
 void report () {
@@ -56,6 +52,8 @@ void report () {
   delay(300);  
   long readVal = analogRead(A0);
 
+  Blynk.virtualWrite(VPIN_UPTIME, millis() / 1000);    
+
   digitalWrite(PIN_SENSOR_POWER, LOW);
   if (readVal == 0 || readVal == 4095) {
     pump(false);
@@ -67,18 +65,14 @@ void report () {
       isInvalidReading = true;
       Blynk.virtualWrite(VPIN_ERROR, 1023);
     }
-    if (invalidReadingCount > 100) {
-      Serial.println("INVALID READING: REBOOT");
-      reboot();
-    }
     return;
   } else {
-    Blynk.virtualWrite(VPIN_ERROR, 0);
+    esp_task_wdt_reset();
+    Blynk.virtualWrite(VPIN_ERROR, 0);    
     isInvalidReading = false;
     invalidReadingCount = 0;
   }
   
-
   Serial.println("report");
   float currentLevel = (exp( (4095.0 - (float) readVal)/ (410.0))) / 22.0;
 
@@ -87,7 +81,6 @@ void report () {
   } else {
     level = ((smooth - 1) * level +  currentLevel) / smooth;
   }
-
   
   Serial.print("readVal: ");
   Serial.print(readVal);
@@ -201,10 +194,8 @@ void setup() {
   Serial.begin(9600);
   Serial.println("setup");
 
-  watchdogTimer = timerBegin(0, 80, true); //timer 0 divisor 80
-  timerAlarmWrite(watchdogTimer, 60000000, false); // set time in uS must be fed within this time or reboot
-  timerAttachInterrupt(watchdogTimer, & reboot, true);
-  timerAlarmEnable(watchdogTimer);  // enable interrupt
+  esp_task_wdt_init(60, true);
+  esp_task_wdt_add(NULL);
   
   Blynk.begin(BLYNK_TOKEN_WATERING, WIFI_SSID, WIFI_PASSWORD);
   timer.setInterval(5003, report);
@@ -217,11 +208,11 @@ void setup() {
 
 void loop() {
    Blynk.run();  
-   if (Blynk.connected()) {
-    timerWrite(watchdogTimer, 0); 
+   if (Blynk.connected()) {    
     timer.run();
    } else {
     Serial.println("CONNECTION LOST!");
+    delay(1000);
     pump(false);
    }   
 }
